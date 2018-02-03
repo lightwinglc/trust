@@ -4,6 +4,7 @@
 import os
 import ConfigParser
 import pexpect
+import argparse
  
 #配置文件类，从配置文件中获取主机列表、用户名和密码，初始化输入参数为配置文件路径
 class TrustConf(object):
@@ -168,8 +169,17 @@ class TrustMake(object):
                 print 'Host %s password error.'%(host)
                 break
 
-if __name__ == '__main__':
-    myconf = TrustConf('./trust.ini')
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", "--config", help="path of config file")
+    args = parser.parse_args()
+
+    myconf = TrustConf(args.config)
     mytrust = TrustMake(myconf)
     mytrust.doDelete()
     mytrust.doTrust()
+
+
+if __name__ == '__main__':
+    main()
