@@ -50,7 +50,8 @@ class RemoteWork(object):
         ssh_client.login(host, self.username, self.password)
 
         # 建目标目录
-        ssh_client.sendline('mkdir -p %s'%self.scptargetdir)
+        father_path = os.path.abspath(os.path.dirname(self.scptargetdir) + os.path.sep + ".")
+        ssh_client.sendline('mkdir -p %s'%father_path)
         ssh_client.prompt()
         print(ssh_client.before)
 
