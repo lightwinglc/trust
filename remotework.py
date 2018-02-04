@@ -11,6 +11,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+
 # 配置文件类，从配置文件中获取主机列表，初始化输入参数为配置文件路径
 class WorkConf(object):
     def __init__(self, file):
@@ -46,8 +47,15 @@ class RemoteWork(object):
 
     # 在单台主机上执行工作
     def do_singlework(self, host):
+        print 'begin host %s work:#######################################################'%host
+        # 登录
         ssh_client = pxssh.pxssh()
         ssh_client.login(host, self.username, self.password)
+
+        # 删除目标目录
+        ssh_client.sendline('rm -rf %s' % self.scptargetdir)
+        ssh_client.prompt()
+        print(ssh_client.before)
 
         # 建目标目录
         father_path = os.path.abspath(os.path.dirname(self.scptargetdir) + os.path.sep + ".")
@@ -69,16 +77,17 @@ class RemoteWork(object):
             print(ssh_client.before)
 
         ssh_client.logout()
+        print 'end host %s work:#######################################################' % host
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--config", help="path of config file")
+    parser.add_argument("config", help="path of config file")
     args = parser.parse_args()
 
     myconf = WorkConf(args.config)
     mywork = RemoteWork(myconf)
-    mywork.do_singlework("132.252.130.15")
+    mywork.do_allwork()
 
 
 if __name__ == '__main__':
