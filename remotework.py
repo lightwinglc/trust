@@ -14,13 +14,13 @@ sys.setdefaultencoding('utf-8')
 
 # 配置文件类，从配置文件中获取主机列表，初始化输入参数为配置文件路径
 class WorkConf(object):
-    def __init__(self, file):
-        self.file = file
+    def __init__(self, cfgfile):
+        self.cfgfile = cfgfile
         self.parse_conf()
 
     def parse_conf(self):
         config = ConfigParser.ConfigParser()
-        with open(self.file, 'r') as cfgfile:
+        with open(self.cfgfile, 'r') as cfgfile:
             config.readfp(cfgfile)
             self.hostsmap = config.get('hosts', 'hostsmap')
             self.username = config.get('hosts', 'username')
