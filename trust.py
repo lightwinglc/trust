@@ -3,6 +3,8 @@
 
 import os
 import ConfigParser
+import sys
+
 import pexpect
 import argparse
 
@@ -10,6 +12,9 @@ import argparse
 # 配置文件类，从配置文件中获取主机列表、用户名和密码，初始化输入参数为配置文件路径
 class TrustConf(object):
     def __init__(self, config_file):
+        if config_file is None:
+            print 'must set path of config file'
+            sys.exit()
         self.config_file = config_file
         config = ConfigParser.ConfigParser()
         with open(self.config_file, 'r') as config_io:
