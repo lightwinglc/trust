@@ -22,10 +22,11 @@ class TrustConf(object):
             self.hosts_map = config.get('hosts', 'hosts_map')
             self.username = config.get('hosts', 'username')
             self.password = config.get('hosts', 'password')
+            self.port = config.get('hosts', 'port')
 
 
 # 在指定的主机上生成ssh秘钥，参数为主机IP，用户名和密码，已有key文件不进行覆盖
-def remote_gen_key(host, username, password):
+def remote_gen_key(host, username, password, port):
     command = 'ssh-keygen -t rsa'
     ssh_new_key = 'Are you sure you want to continue connecting'
     ssh_key_file = 'Enter file in which to save the key'
@@ -33,7 +34,7 @@ def remote_gen_key(host, username, password):
     ssh_re_put_passphrase = 'Enter same passphrase again'
     ssh_over_write = 'Overwrite'
     ssh_password_error = 'Permission denied, please try again.'
-    child = pexpect.spawn('ssh -l %s %s %s' % (username, host, command))
+    child = pexpect.spawn('ssh -l %s %s -p %s %s' % (username, host, port, command))
     while True:
         i = child.expect([pexpect.EOF, pexpect.TIMEOUT, ssh_new_key, 'password: ', ssh_key_file, ssh_passphrase,
                           ssh_re_put_passphrase, ssh_over_write, ssh_password_error])
@@ -72,9 +73,9 @@ def remote_gen_key(host, username, password):
 
 
 # 使用scp从指定远端机器复制公钥到本地，参数是远端机器IP，用户名，密码，主机名
-def scp_pub_key_from_remote(host, username, password, hostname):
+def scp_pub_key_from_remote(host, username, password, hostname, port):
     ssh_password_error = 'Permission denied, please try again.'
-    child = pexpect.spawn('scp %s@%s:~/.ssh/id_rsa.pub %s' % (username, host, hostname))
+    child = pexpect.spawn('scp -P %s %s@%s:~/.ssh/id_rsa.pub %s' % (port, username, host, hostname))
     while True:
         i = child.expect([pexpect.EOF, pexpect.TIMEOUT, 'password: ', ssh_password_error])
         # 执行完退出
@@ -99,9 +100,9 @@ def scp_pub_key_from_remote(host, username, password, hostname):
 
 
 # 将生成的authorized_keys复制到指定的远端机器，参数为远端机器的主机IP，用户名，密码
-def scp_auth_key_to_remote(host, username, password):
+def scp_auth_key_to_remote(host, username, password, port):
     ssh_password_error = 'Permission denied, please try again.'
-    child = pexpect.spawn('scp authorized_keys %s@%s:~/.ssh/authorized_keys' % (username, host))
+    child = pexpect.spawn('scp -P %s authorized_keys %s@%s:~/.ssh/authorized_keys' % (port, username, host))
     while True:
         i = child.expect([pexpect.EOF, pexpect.TIMEOUT, 'password: ', ssh_password_error])
         # 执行完退出
@@ -123,11 +124,11 @@ def scp_auth_key_to_remote(host, username, password):
 
 
 # 删除指定远端机器的.ssh文件夹，参数为主机IP，用户名和密码
-def delete_ssh(host, username, password):
+def delete_ssh(host, username, password, port):
     command = 'rm -rf ~/.ssh'
     ssh_connect = 'Are you sure you want to continue connecting'
     ssh_password_error = 'Permission denied, please try again.'
-    child = pexpect.spawn('ssh -l %s %s %s' % (username, host, command))
+    child = pexpect.spawn('ssh -l %s %s -p %s %s' % (username, host, port, command))
     while True:
         i = child.expect([pexpect.EOF, pexpect.TIMEOUT, ssh_connect, 'password: ', ssh_password_error])
         # 执行完退出
@@ -157,25 +158,26 @@ class TrustMake(object):
         self.hosts_map = eval(config.hosts_map)
         self.username = config.username
         self.password = config.password
+        self.port = config.port
 
     # 循环遍历主机列表，建信任关系
     def do_trust(self):
         # 遍历主机并生成秘钥，再将公钥复制到本地
         for host in self.hosts_map.keys():
-            remote_gen_key(host, self.username, self.password)
-            scp_pub_key_from_remote(host, self.username, self.password, self.hosts_map[host])
+            remote_gen_key(host, self.username, self.password, self.port)
+            scp_pub_key_from_remote(host, self.username, self.password, self.hosts_map[host], self.port)
 
         # 修改authorized_keys文件的权限
         os.system('chmod 600 authorized_keys')
 
         # 遍历主机并复制authorized_keys文件
         for host in self.hosts_map.keys():
-            scp_auth_key_to_remote(host, self.username, self.password)
+            scp_auth_key_to_remote(host, self.username, self.password, self.port)
         os.system('rm -rf authorized_keys')
 
     def do_delete(self):
         for host in self.hosts_map.keys():
-            delete_ssh(host, self.username, self.password)
+            delete_ssh(host, self.username, self.password, self.port)
 
 
 def main():
